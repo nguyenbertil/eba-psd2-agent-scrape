@@ -2,11 +2,9 @@ import requests
 import pandas as pd
 import time
 import os
+import argparse
 
 # Filter: Swedish country, National bank of belgium , status active
-json_filter = {"$and": [{"_payload.EntityType": "PSD_AG"}, {"_searchkeys": {"$elemMatch": {"T": "P", "K": "DER_CHI_ENT_AUT", "V": "YES"}}}, {
-    "_searchkeys": {"$elemMatch": {"T": "P", "K": "ENT_COU_RES", "V": "SE"}}}, {"_payload.CA_OwnerID": "BE_NBB"}]}
-
 url = "https://euclid.eba.europa.eu/register/pir/search/agents"
 
 parent_url = "https://euclid.eba.europa.eu/register/api/entity/read/"
@@ -52,7 +50,14 @@ def format_payload_results(agent):
         updated_properties.update(prop)
     agent["Properties"] = updated_properties
     return agent
-def main():
+def main(country_code):
+    bank_codes = {"BE": "BE_NBB", "ES" : "ES_BE"}
+    if country_code not in bank_codes:
+        raise ValueError("Invalid country code")
+
+    json_filter = {"$and": [{"_payload.EntityType": "PSD_AG"}, {"_searchkeys": {"$elemMatch": {"T": "P", "K": "DER_CHI_ENT_AUT", "V": "YES"}}}, {
+        "_searchkeys": {"$elemMatch": {"T": "P", "K": "ENT_COU_RES", "V": "SE"}}}, {"_payload.CA_OwnerID": bank_codes[country_code] }]}
+
     response = s.post("https://euclid.eba.europa.eu/register/api/search/entities",
                       params={"t": f"{int(time.time() * 1000)}"}, json=json_filter)
     result = []
@@ -75,9 +80,13 @@ def main():
 
 
 if __name__ == '__main__':
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument("--country", help="Country to scrape: options : ES or BE", required=True)
+    parsed_args = argument_parser.parse_args()
+    country_code = parsed_args.country
     print("Starting scraper")
     try:
-        main()
+        main(country_code)
     except Exception as e:
         print("Error while scraping", e)
     print("Finished scraping without errors")
