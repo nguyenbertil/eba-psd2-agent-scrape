@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import time
+import os
 
 # Filter: Swedish country, National bank of belgium , status active
 json_filter = {"$and": [{"_payload.EntityType": "PSD_AG"}, {"_searchkeys": {"$elemMatch": {"T": "P", "K": "DER_CHI_ENT_AUT", "V": "YES"}}}, {
@@ -74,4 +75,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    print("Starting scraper")
+    try:
+        main()
+    except Exception as e:
+        print("Error while scraping", e)
+    print("Finished scraping without errors")
+    print(f"Wrote results to {os.getcwd()}/data.csv")
